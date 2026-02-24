@@ -100,7 +100,7 @@ describe('Bazel restore/save round-trip', () => {
     // Simulate inputs
     (core.getInput as jest.Mock).mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        'cli-version': 'v1.7.0',
+        'cli-version': 'v1.7.1',
         'workspace': 'myorg/myproject',
         'cache-tag': '',
         'proxy-port': '5000',
@@ -121,7 +121,7 @@ describe('Bazel restore/save round-trip', () => {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // Verify CLI was installed
-    expect(ensureBoringCache).toHaveBeenCalledWith({ version: 'v1.7.0' });
+    expect(ensureBoringCache).toHaveBeenCalledWith({ version: 'v1.7.1' });
 
     // Verify proxy was started with correct args
     expect(startRegistryProxy).toHaveBeenCalledWith(expect.objectContaining({
