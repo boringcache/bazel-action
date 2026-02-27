@@ -42317,6 +42317,8 @@ function writeBazelrc(port, readOnly) {
         '# BoringCache remote cache',
         `build --remote_cache=http://127.0.0.1:${port}`,
         `build --remote_upload_local_results=${!readOnly}`,
+        'build --remote_download_minimal',
+        'build --jobs=2000',
         '',
     ].join('\n');
     fs.appendFileSync(bazelrcPath, config);
