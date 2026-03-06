@@ -33,6 +33,10 @@ export function parseBoolean(value: string | undefined, defaultValue = false): b
  */
 export function writeBazelrc(port: number, readOnly: boolean): void {
   const bazelrcPath = path.join(os.homedir(), '.bazelrc');
+  const remoteMaxConnections = parseInt(process.env.BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS || '', 10);
+  const maxConnections = Number.isFinite(remoteMaxConnections) && remoteMaxConnections > 0
+    ? remoteMaxConnections
+    : 64;
 
   const config = [
     '',
@@ -40,7 +44,7 @@ export function writeBazelrc(port: number, readOnly: boolean): void {
     `build --remote_cache=http://127.0.0.1:${port}`,
     `build --remote_upload_local_results=${!readOnly}`,
     'build --remote_download_minimal',
-    'build --jobs=2000',
+    `build --remote_max_connections=${maxConnections}`,
     '',
   ].join('\n');
 

@@ -111,5 +111,25 @@ describe('Bazel Utils', () => {
         expect.stringContaining('--remote_cache=http://127.0.0.1:8080')
       );
     });
+
+    it('should set a safe default remote_max_connections value', () => {
+      writeBazelrc(5000, false);
+
+      expect(fs.appendFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('--remote_max_connections=64')
+      );
+    });
+
+    it('should honor BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS override', () => {
+      process.env.BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS = '24';
+      writeBazelrc(5000, false);
+
+      expect(fs.appendFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('--remote_max_connections=24')
+      );
+      delete process.env.BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS;
+    });
   });
 });

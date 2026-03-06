@@ -17,6 +17,7 @@ Bazel remote cache backed by BoringCache. This action starts a local HTTP cache 
 ```
 
 The action configures `~/.bazelrc` with `--remote_cache` pointing at the local proxy. Bazel reads and writes cache entries through the proxy transparently.
+It also sets `--remote_max_connections=64` by default (override with `BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS`).
 
 ## How it works
 
