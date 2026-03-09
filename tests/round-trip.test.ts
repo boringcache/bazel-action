@@ -151,6 +151,7 @@ describe('Bazel restore/save round-trip', () => {
     // Verify outputs were set
     expect(outputs['cache-tag']).toBe('myrepo');
     expect(outputs['proxy-port']).toBe('5000');
+    expect(outputs['proxy-log-path']).toContain('boringcache-proxy-5000.log');
     expect(outputs['workspace']).toBe('myorg/myproject');
 
     // Now run save phase — it should read proxyPid from state and stop proxy

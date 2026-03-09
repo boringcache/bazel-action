@@ -59,4 +59,5 @@ For pull request builds, set `read-only: true` to prevent uploading results whil
 |--------|-------------|
 | `cache-tag` | Resolved cache tag. |
 | `proxy-port` | Proxy port used. |
+| `proxy-log-path` | Path to the proxy log file on the runner. |
 | `workspace` | Resolved workspace. |

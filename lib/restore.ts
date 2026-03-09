@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as os from 'os';
+import * as path from 'path';
 import {
   parseBoolean,
   getWorkspace,
@@ -46,6 +48,7 @@ async function run(): Promise<void> {
 
     core.setOutput('cache-tag', cacheTag);
     core.setOutput('proxy-port', String(proxy.port));
+    core.setOutput('proxy-log-path', path.join(os.tmpdir(), `boringcache-proxy-${proxy.port}.log`));
     core.setOutput('workspace', workspace);
 
     core.info(`Bazel remote cache configured at http://127.0.0.1:${proxy.port}`);

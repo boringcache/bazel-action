@@ -40,6 +40,8 @@ outputs:
     description: 'Resolved cache tag.'
   proxy-port:
     description: 'Proxy port used.'
+  proxy-log-path:
+    description: 'Path to the proxy log file on the runner.'
   workspace:
     description: 'Resolved workspace.'
 

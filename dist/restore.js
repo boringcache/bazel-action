@@ -34,6 +34,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
+const os = __importStar(require("os"));
+const path = __importStar(require("path"));
 const utils_1 = require("./utils");
 async function run() {
     try {
@@ -66,6 +68,7 @@ async function run() {
         (0, utils_1.writeBazelrc)(proxy.port, readOnly);
         core.setOutput('cache-tag', cacheTag);
         core.setOutput('proxy-port', String(proxy.port));
+        core.setOutput('proxy-log-path', path.join(os.tmpdir(), `boringcache-proxy-${proxy.port}.log`));
         core.setOutput('workspace', workspace);
         core.info(`Bazel remote cache configured at http://127.0.0.1:${proxy.port}`);
     }
