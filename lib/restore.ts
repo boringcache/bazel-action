@@ -39,7 +39,7 @@ async function run(): Promise<void> {
       noPlatform: proxyNoPlatform,
       verbose,
     });
-    await waitForProxy(proxy.port, 20000, proxy.pid);
+    await waitForProxy(proxy.port, undefined, proxy.pid);
     core.saveState('proxyPid', String(proxy.pid));
 
     writeBazelrc(proxy.port, readOnly);

@@ -131,7 +131,7 @@ describe('Bazel restore/save round-trip', () => {
       host: '127.0.0.1',
       port: 5000,
     }));
-    expect(waitForProxy).toHaveBeenCalledWith(5000, 20000, 12345);
+    expect(waitForProxy).toHaveBeenCalledWith(5000, undefined, 12345);
 
     // Verify bazelrc was written
     expect(fs.appendFileSync).toHaveBeenCalledWith(
