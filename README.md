@@ -11,7 +11,7 @@ Bazel remote cache backed by BoringCache. This action starts a local HTTP cache 
   with:
     workspace: my-org/my-project
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 
 - run: bazel build //...
 ```
@@ -29,7 +29,7 @@ No explicit save or restore is needed. The proxy handles cache reads and writes 
 
 ## Read-only mode
 
-For pull request builds, set `read-only: true` to prevent uploading results while still benefiting from cache hits:
+For pull request builds, set `read-only: true` and provide only a restore-capable token. Trusted branch/tag jobs can add `BORINGCACHE_SAVE_TOKEN` when writes are allowed:
 
 ```yaml
 - uses: boringcache/bazel-action@v1
@@ -37,14 +37,14 @@ For pull request builds, set `read-only: true` to prevent uploading results whil
     workspace: my-org/my-project
     read-only: ${{ github.event_name == 'pull_request' }}
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN }}
 ```
 
 ## Inputs
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `cli-version` | `v1.7.2` | BoringCache CLI version. Set to `skip` to disable automatic setup. |
+| `cli-version` | `v1.12.1` | BoringCache CLI version. Set to `skip` to disable automatic setup. |
 | `workspace` | | BoringCache workspace (e.g., `my-org/my-project`). |
 | `cache-tag` | repo name | Cache tag prefix. |
 | `proxy-port` | `5000` | Port for the cache proxy. |

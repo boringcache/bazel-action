@@ -40,11 +40,13 @@ async function run(): Promise<void> {
       noGit: proxyNoGit,
       noPlatform: proxyNoPlatform,
       verbose,
+      readOnly,
     });
     await waitForProxy(proxy.port, undefined, proxy.pid);
     core.saveState('proxyPid', String(proxy.pid));
 
-    writeBazelrc(proxy.port, readOnly);
+    const effectiveReadOnly = proxy.readOnly ?? readOnly;
+    writeBazelrc(proxy.port, effectiveReadOnly);
 
     core.setOutput('cache-tag', cacheTag);
     core.setOutput('proxy-port', String(proxy.port));

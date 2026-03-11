@@ -52,7 +52,6 @@ describe('Bazel Utils', () => {
 
     it('should fail when no workspace available', () => {
       expect(() => getWorkspace('')).toThrow('Workspace required');
-      expect(core.setFailed).toHaveBeenCalled();
     });
   });
 

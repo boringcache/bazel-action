@@ -38,6 +38,7 @@ const os = __importStar(require("os"));
 const path = __importStar(require("path"));
 const utils_1 = require("./utils");
 async function run() {
+    var _a;
     try {
         const cliVersion = core.getInput('cli-version') || '';
         const workspace = (0, utils_1.getWorkspace)(core.getInput('workspace') || '');
@@ -62,10 +63,12 @@ async function run() {
             noGit: proxyNoGit,
             noPlatform: proxyNoPlatform,
             verbose,
+            readOnly,
         });
         await (0, utils_1.waitForProxy)(proxy.port, undefined, proxy.pid);
         core.saveState('proxyPid', String(proxy.pid));
-        (0, utils_1.writeBazelrc)(proxy.port, readOnly);
+        const effectiveReadOnly = (_a = proxy.readOnly) !== null && _a !== void 0 ? _a : readOnly;
+        (0, utils_1.writeBazelrc)(proxy.port, effectiveReadOnly);
         core.setOutput('cache-tag', cacheTag);
         core.setOutput('proxy-port', String(proxy.port));
         core.setOutput('proxy-log-path', path.join(os.tmpdir(), `boringcache-proxy-${proxy.port}.log`));
