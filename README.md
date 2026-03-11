@@ -1,35 +1,10 @@
 # boringcache/bazel-action
 
-**Cache once. Reuse everywhere.**
+Run a Bazel remote cache backed by BoringCache.
 
-Bazel remote cache backed by BoringCache. This action starts a local HTTP cache proxy that Bazel talks to natively via `--remote_cache`. No bulk save/restore steps needed.
+The action starts a local HTTP proxy and points Bazel at it with `--remote_cache`.
 
 ## Quick start
-
-```yaml
-- uses: boringcache/bazel-action@v1
-  with:
-    workspace: my-org/my-project
-  env:
-    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
-
-- run: bazel build //...
-```
-
-The action configures `~/.bazelrc` with `--remote_cache` pointing at the local proxy. Bazel reads and writes cache entries through the proxy transparently.
-It also sets `--remote_max_connections=64` by default (override with `BORINGCACHE_BAZEL_REMOTE_MAX_CONNECTIONS`).
-
-## How it works
-
-1. **Main step**: Installs the BoringCache CLI, starts a local HTTP cache proxy, and appends remote cache settings to `~/.bazelrc`.
-2. **Build**: Bazel reads/writes cache entries via the proxy using its native HTTP cache protocol.
-3. **Post step**: Stops the proxy (flushes any pending uploads).
-
-No explicit save or restore is needed. The proxy handles cache reads and writes as Bazel requests them.
-
-## Read-only mode
-
-For pull request builds, set `read-only: true` and provide only a restore-capable token. Trusted branch/tag jobs can add `BORINGCACHE_SAVE_TOKEN` when writes are allowed:
 
 ```yaml
 - uses: boringcache/bazel-action@v1
@@ -38,26 +13,40 @@ For pull request builds, set `read-only: true` and provide only a restore-capabl
     read-only: ${{ github.event_name == 'pull_request' }}
   env:
     BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ github.event_name == 'pull_request' && '' || secrets.BORINGCACHE_SAVE_TOKEN }}
+
+- run: bazel build //...
 ```
 
-## Inputs
+## What it does
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `cli-version` | `v1.12.1` | BoringCache CLI version. Set to `skip` to disable automatic setup. |
-| `workspace` | | BoringCache workspace (e.g., `my-org/my-project`). |
-| `cache-tag` | repo name | Cache tag prefix. |
-| `proxy-port` | `5000` | Port for the cache proxy. |
-| `read-only` | `false` | Don't upload build results (useful for PRs). |
-| `proxy-no-git` | `false` | Pass `--no-git` to the proxy. |
-| `proxy-no-platform` | `false` | Pass `--no-platform` to the proxy. |
-| `verbose` | `false` | Enable verbose CLI output. |
+- Installs the CLI.
+- Starts a local cache-registry proxy.
+- Configures Bazel to talk to that proxy.
+- Flushes pending uploads when the job finishes.
+
+## Key inputs
+
+| Input | Description |
+|-------|-------------|
+| `workspace` | Workspace in `org/repo` form. Defaults to the repo name. |
+| `cache-tag` | Cache tag prefix. Defaults to the repo name. |
+| `read-only` | Disable uploads on PRs or other low-trust jobs. |
+| `proxy-port` | Port for the local proxy. |
+| `proxy-no-git` / `proxy-no-platform` | Adjust tag scoping for special cases. |
+| `cli-version` | CLI version to install. |
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
 | `cache-tag` | Resolved cache tag. |
-| `proxy-port` | Proxy port used. |
-| `proxy-log-path` | Path to the proxy log file on the runner. |
-| `workspace` | Resolved workspace. |
+| `proxy-port` | Proxy port in use. |
+| `proxy-log-path` | Path to the proxy log on the runner. |
+| `workspace` | Resolved workspace name. |
+
+## Docs
+
+- [GitHub Actions docs](https://boringcache.com/docs#language-actions)
+- [GitHub Actions auth and trust model](https://boringcache.com/docs#actions-auth)
+- [Native proxy integrations](https://boringcache.com/docs#cli-cache-registry)
