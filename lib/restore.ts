@@ -15,6 +15,7 @@ import {
 async function run(): Promise<void> {
   try {
     const cliVersion = core.getInput('cli-version') || '';
+    const bazelVersion = core.getInput('bazel-version') || '';
     const workspace = getWorkspace(core.getInput('workspace') || '');
     const cacheTag = getCacheTagPrefix(core.getInput('cache-tag') || '', 'bazel');
     const proxyPort = parseInt(core.getInput('proxy-port') || '0', 10) || await findAvailablePort();
@@ -26,6 +27,11 @@ async function run(): Promise<void> {
     core.saveState('workspace', workspace);
     core.saveState('cacheTag', cacheTag);
     core.saveState('verbose', verbose.toString());
+
+    if (bazelVersion) {
+      core.exportVariable('USE_BAZEL_VERSION', bazelVersion);
+      core.info(`USE_BAZEL_VERSION=${bazelVersion}`);
+    }
 
     if (cliVersion.toLowerCase() !== 'skip') {
       await ensureBoringCache({ version: cliVersion });

@@ -7,6 +7,10 @@ inputs:
     description: 'BoringCache CLI version (e.g., v1.0.0). Set to "skip" to disable automatic CLI setup.'
     required: false
     default: 'v1.12.3'
+  bazel-version:
+    description: 'Bazel version for Bazelisk (e.g., "7.x", "8.0.0"). Sets USE_BAZEL_VERSION.'
+    required: false
+    default: ''
   workspace:
     description: 'BoringCache workspace identifier (e.g., my-org/my-project). Defaults to repository name.'
     required: false

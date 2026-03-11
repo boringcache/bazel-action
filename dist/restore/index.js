@@ -42355,6 +42355,7 @@ async function run() {
     var _a;
     try {
         const cliVersion = core.getInput('cli-version') || '';
+        const bazelVersion = core.getInput('bazel-version') || '';
         const workspace = (0, utils_1.getWorkspace)(core.getInput('workspace') || '');
         const cacheTag = (0, utils_1.getCacheTagPrefix)(core.getInput('cache-tag') || '', 'bazel');
         const proxyPort = parseInt(core.getInput('proxy-port') || '0', 10) || await (0, utils_1.findAvailablePort)();
@@ -42365,6 +42366,10 @@ async function run() {
         core.saveState('workspace', workspace);
         core.saveState('cacheTag', cacheTag);
         core.saveState('verbose', verbose.toString());
+        if (bazelVersion) {
+            core.exportVariable('USE_BAZEL_VERSION', bazelVersion);
+            core.info(`USE_BAZEL_VERSION=${bazelVersion}`);
+        }
         if (cliVersion.toLowerCase() !== 'skip') {
             await (0, utils_1.ensureBoringCache)({ version: cliVersion });
         }

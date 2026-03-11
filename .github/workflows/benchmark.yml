@@ -1,0 +1,164 @@
+name: Bazel Build Benchmark
+
+on:
+  workflow_dispatch:
+
+env:
+  BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+
+jobs:
+  bazel-actions-cache:
+    name: "Baseline: Bazel + actions/cache (disk cache)"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        run: [1, 2, 3]
+    steps:
+      - name: Create Bazel project
+        run: |
+          mkdir -p test-project/src/main/java/com/example
+          cat > test-project/MODULE.bazel << 'BAZEL'
+          module(name = "benchmark", version = "0.1.0")
+          bazel_dep(name = "rules_java", version = "8.6.4")
+          BAZEL
+          cat > test-project/BUILD.bazel << 'BAZEL'
+          java_binary(
+            name = "main",
+            srcs = glob(["src/main/java/**/*.java"]),
+            main_class = "com.example.Main",
+          )
+          BAZEL
+          cat > test-project/src/main/java/com/example/Main.java << 'JAVA'
+          package com.example;
+          public class Main {
+            public static void main(String[] args) {
+              System.out.println("Hello from Bazel!");
+            }
+          }
+          JAVA
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel-disk
+          key: bazel-benchmark-${{ runner.os }}-${{ hashFiles('test-project/**') }}
+          restore-keys: bazel-benchmark-${{ runner.os }}-
+
+      - name: Bazel build
+        working-directory: test-project
+        run: |
+          START_TIME=$(date +%s%N)
+          bazel build //... --disk_cache=~/.cache/bazel-disk
+          END_TIME=$(date +%s%N)
+          DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
+          echo "Bazel + disk_cache build - Run ${{ matrix.run }}: ${DURATION}ms"
+          mkdir -p benchmark-results
+          echo "${DURATION}" > benchmark-results/actions-cache-run${{ matrix.run }}.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: actions-cache-results-${{ matrix.run }}
+          path: test-project/benchmark-results/
+
+  bazel-boringcache:
+    name: "Test: boringcache/bazel"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        run: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Bazel project
+        run: |
+          mkdir -p test-project/src/main/java/com/example
+          cat > test-project/MODULE.bazel << 'BAZEL'
+          module(name = "benchmark", version = "0.1.0")
+          bazel_dep(name = "rules_java", version = "8.6.4")
+          BAZEL
+          cat > test-project/BUILD.bazel << 'BAZEL'
+          java_binary(
+            name = "main",
+            srcs = glob(["src/main/java/**/*.java"]),
+            main_class = "com.example.Main",
+          )
+          BAZEL
+          cat > test-project/src/main/java/com/example/Main.java << 'JAVA'
+          package com.example;
+          public class Main {
+            public static void main(String[] args) {
+              System.out.println("Hello from Bazel!");
+            }
+          }
+          JAVA
+
+      - name: Setup Bazel with boringcache
+        uses: ./
+        with:
+          workspace: boringcache/actions
+
+      - name: Bazel build
+        working-directory: test-project
+        run: |
+          START_TIME=$(date +%s%N)
+          bazel build //...
+          END_TIME=$(date +%s%N)
+          DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
+          echo "boringcache/bazel build - Run ${{ matrix.run }}: ${DURATION}ms"
+          mkdir -p benchmark-results
+          echo "${DURATION}" > benchmark-results/boringcache-run${{ matrix.run }}.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: boringcache-results-${{ matrix.run }}
+          path: test-project/benchmark-results/
+
+  benchmark-summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [bazel-actions-cache, bazel-boringcache]
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-results-*"
+          merge-multiple: true
+
+      - name: Generate summary
+        run: |
+          echo "# Bazel Build Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Bazel Build Times" >> $GITHUB_STEP_SUMMARY
+          echo "| Run | Bazel + disk_cache + actions/cache | boringcache/bazel | Improvement |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-----------------------------------|------------------|-------------|" >> $GITHUB_STEP_SUMMARY
+
+          for run in 1 2 3; do
+            if [[ -f "actions-cache-run${run}.txt" && -f "boringcache-run${run}.txt" ]]; then
+              a=$(cat "actions-cache-run${run}.txt")
+              b=$(cat "boringcache-run${run}.txt")
+              if [[ $b -gt 0 ]]; then
+                imp=$(echo "scale=2; $a / $b" | bc -l)
+              else
+                imp="N/A"
+              fi
+              echo "| $run | ${a}ms | ${b}ms | ${imp}x |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $run | Missing | Missing | N/A |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -f actions-cache-run1.txt && -f actions-cache-run2.txt && -f actions-cache-run3.txt && \
+                -f boringcache-run1.txt && -f boringcache-run2.txt && -f boringcache-run3.txt ]]; then
+            aa=$(( ($(cat actions-cache-run1.txt)+$(cat actions-cache-run2.txt)+$(cat actions-cache-run3.txt))/3 ))
+            bb=$(( ($(cat boringcache-run1.txt)+$(cat boringcache-run2.txt)+$(cat boringcache-run3.txt))/3 ))
+            if [[ $bb -gt 0 ]]; then
+              imp=$(echo "scale=2; $aa / $bb" | bc -l)
+            else
+              imp="N/A"
+            fi
+            echo "- **Bazel + disk_cache average**: ${aa}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- **boringcache/bazel average**: ${bb}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- **Improvement**: ${imp}x" >> $GITHUB_STEP_SUMMARY
+          fi
