@@ -1,8 +1,10 @@
 # boringcache/bazel-action
 
-Run a Bazel remote cache backed by BoringCache.
+Run a local Bazel remote cache backed by BoringCache.
 
-The action starts a local HTTP proxy and points Bazel at it with `--remote_cache`.
+## When to use it
+
+Use it when Bazel should keep talking to a remote cache and you want BoringCache behind the endpoint.
 
 ## Quick start
 
@@ -18,7 +20,13 @@ The action starts a local HTTP proxy and points Bazel at it with `--remote_cache
 - run: bazel build //...
 ```
 
-## What it does
+## Trust model
+
+- Use `read-only: true` on pull requests and other low-trust jobs.
+- Restore-only jobs can use `BORINGCACHE_RESTORE_TOKEN`; writes should use `BORINGCACHE_SAVE_TOKEN`.
+- Do not let low-trust jobs publish to the same trusted tag scope as main or release builds.
+
+## What it handles
 
 - Installs the CLI.
 - Starts a local cache-registry proxy.
@@ -45,7 +53,7 @@ The action starts a local HTTP proxy and points Bazel at it with `--remote_cache
 | `proxy-log-path` | Path to the proxy log on the runner. |
 | `workspace` | Resolved workspace name. |
 
-## Docs
+## Learn more
 
 - [GitHub Actions docs](https://boringcache.com/docs#language-actions)
 - [GitHub Actions auth and trust model](https://boringcache.com/docs#actions-auth)
